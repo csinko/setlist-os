@@ -112,7 +112,7 @@ run_cmd mount "${OSDEV}p1" /mnt/boot
 
 # ── Clone repo & commit hardware config ─────────────────────────────────────
 log "Cloning setlist-os ..."
-run_cmd git clone https://github.com/setlist-os/setlist-os /mnt/etc/nixos
+run_cmd git clone https://github.com/csinko/setlist-os /mnt/etc/nixos
 
 run_cmd nixos-generate-config --root /mnt --no-filesystems
 run_cmd git -C /mnt/etc/nixos add hardware-configuration.nix
