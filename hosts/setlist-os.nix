@@ -60,7 +60,7 @@
     enable = true;
     settings = {
       PasswordAuthentication = true;
-      PermitRootLogin        = false;
+      PermitRootLogin        = "no";
     };
   };
 }
