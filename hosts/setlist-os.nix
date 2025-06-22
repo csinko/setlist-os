@@ -59,8 +59,8 @@
   services.openssh = {
     enable = true;
     settings = {
-      PasswordAuthentication = "yes";
-      PermitRootLogin        = "no";
+      PasswordAuthentication = true;
+      PermitRootLogin        = false;
     };
   };
 }
