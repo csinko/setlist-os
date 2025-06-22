@@ -66,14 +66,18 @@ in
     # Impermanence: only /persist survives
     environment.persistence."${cfg.persistMount}" = {
       directories = [
-        "/etc/ssh"
         "/var/lib/tailscale"
         "/var/log"
         "/home"
         "/var/lib/setlist"
         "/var/lib/nixos"
       ] ++ cfg.extraPersistentDirs;
-      files = optional cfg.hostname.useDynamic cfg.hostname.dynamicFile;
+      files = optional cfg.hostname.useDynamic cfg.hostname.dynamicFile ++ [
+        "/etc/ssh/ssh_host_ed25519_key"
+        "/etc/ssh/ssh_host_ed25519_key.pub"
+        "/etc/ssh/ssh_host_rsa_key"
+        "/etc/ssh/ssh_host_rsa_key.pub"
+      ];
     };
 
     # Media dataset auto-mount
