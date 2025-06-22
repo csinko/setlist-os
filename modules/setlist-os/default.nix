@@ -60,6 +60,9 @@ in
     boot.loader.systemd-boot.enable  = true;
     boot.loader.efi.canTouchEfiVariables = true;
 
+    boot.zfs.forceImportAll = true;
+    boot.zfs.extraPools = [ cfg.mediaPool ];
+
     # Impermanence: only /persist survives
     environment.persistence."${cfg.persistMount}" = {
       directories = [
@@ -67,6 +70,7 @@ in
         "/var/lib/tailscale"
         "/var/log"
         "/home"
+        "/var/lib/setlist"
       ] ++ cfg.extraPersistentDirs;
       files = optional cfg.hostname.useDynamic cfg.hostname.dynamicFile;
     };
@@ -80,27 +84,32 @@ in
     # Hostname (static placeholder)
     networking.hostName = cfg.hostname.static;
 
+    environment.etc."setlist-dyn-hostname.sh" = {
+      text = ''
+        #!/usr/bin/env bash
+        FILE="${cfg.hostname.dynamicFile}"
+        if [[ -f "$FILE" ]]; then
+          HN=$(tr -d " \r\n" < "$FILE")
+          if [[ -n $HN ]]; then
+            echo "setlist-dyn-hostname: setting hostname to $HN"
+            hostnamectl set-hostname "$HN"
+          fi
+        fi
+      '';
+      mode = "0755";
+    };
+
     # Dynamic hostname service
     systemd.services.setlist-dyn-hostname = mkIf cfg.hostname.useDynamic {
-      description = "Set hostname from ${cfg.hostname.dynamicFile} at boot";
+      description = "Dynamically set hostname from ${cfg.hostname.dynamicFile}";
       wantedBy    = [ "multi-user.target" ];
       before      = [ "network.target" ];
       serviceConfig = {
-        Type = "oneshot";
-        ExecStart = ''
-          ${pkgs.bash}/bin/bash -c '
-            FILE="/etc/setlist-hostname"
-            if [ -f "$FILE" ]; then
-              HN=$(cat "$FILE" | tr -d " \n\r")
-              if [ -n "$HN" ]; then
-                echo "setlist-dyn-hostname: setting hostname to $HN"
-                /run/current-system/sw/bin/hostnamectl set-hostname "$HN"
-              fi
-            fi
-          '
-        '';
+        Type      = "oneshot";
+        ExecStart = "${pkgs.bash}/bin/bash /etc/setlist-dyn-hostname.sh";
       };
     };
+
 
     # Networking services
     services.openssh.enable  = true;
@@ -108,11 +117,21 @@ in
 
     # Predefined service user
     users.users.setlist = {
-      isNormalUser   = true;
-      extraGroups    = [ "wheel" ];
-      hashedPassword = null;
-      home           = "/home/setlist";
+      isSystemUser  = true;                  # ← marks it as a service account
+      group         = "setlist";
+      description   = "Setlist-OS media service user";
+
+      home          = "/var/lib/setlist";    # service data lives here
+      createHome    = true;
+
+      shell         = "${pkgs.shadow}/bin/nologin";
+      hashedPassword = "*";                  # “*” = no password accepted
     };
+
+    users.groups.setlist = { };
+
+    services.logrotate.enable = true;
+
 
     # Ensure /media is writable by setlist
     systemd.tmpfiles.rules = [
