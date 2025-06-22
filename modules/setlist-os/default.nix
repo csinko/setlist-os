@@ -1,4 +1,4 @@
-{ lib, impermanence, pkgs, ... }:
+{ impermanence, ... }:
 
 with lib;
 

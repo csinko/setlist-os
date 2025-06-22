@@ -8,16 +8,12 @@
   };
 
   outputs = { self, nixpkgs, impermanence, flake-utils, ... }:
-    let
-      lib      = nixpkgs.lib;
-      pkgs = import nixpkgs { system = "x86_64-linux"; };
-    in
   {
     ############################################################################
     # 1) exported module library
     ############################################################################
     nixosModules.setlist-os = import ./modules/setlist-os {
-      inherit lib impermanence pkgs;
+      inherit impermanence;
     };
 
     ############################################################################
