@@ -90,7 +90,7 @@ log "Creating rpool ..."
 run_cmd zpool create -f -o ashift=12 \
        -O compression=zstd -O atime=off -O mountpoint=none \
        rpool "${OSDEV}p2"
-for ds in root nix persist home; do
+for ds in root nix persist; do
   run_cmd zfs create -o mountpoint=legacy rpool/$ds
 done
 
@@ -103,10 +103,9 @@ run_cmd zfs create -o mountpoint=legacy mediapool/library
 # ── Mount hierarchy ──────────────────────────────────────────────────────────
 log "Mounting filesystems ..."
 run_cmd mount -t zfs rpool/root /mnt
-for d in nix persist home media boot; do mkdir -p /mnt/$d; done
+for d in nix persist media boot; do mkdir -p /mnt/$d; done
 run_cmd mount -t zfs rpool/nix         /mnt/nix
 run_cmd mount -t zfs rpool/persist     /mnt/persist
-run_cmd mount -t zfs rpool/home        /mnt/home
 run_cmd mount -t zfs mediapool/library /mnt/media
 run_cmd mount "${OSDEV}p1" /mnt/boot
 

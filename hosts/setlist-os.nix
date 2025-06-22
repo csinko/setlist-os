@@ -9,7 +9,6 @@
   fileSystems."/"        = { device = "rpool/root";    fsType = "zfs"; };
   fileSystems."/nix"     = { device = "rpool/nix";     fsType = "zfs"; };
   fileSystems."/persist" = { device = "rpool/persist"; fsType = "zfs"; };
-  fileSystems."/home"    = { device = "rpool/home";    fsType = "zfs"; };
   fileSystems."/boot"    = {
     device  = "/dev/disk/by-partlabel/ESP";
     fsType  = "vfat";
