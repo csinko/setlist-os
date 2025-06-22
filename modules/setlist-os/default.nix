@@ -1,4 +1,4 @@
-{ impermanence, lib, pkgs, ... }:
+{ options, config, lib, pkgs, impermanence, ... }:
 
 with lib;
 
