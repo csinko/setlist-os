@@ -16,7 +16,7 @@
   };
 
   # Safe GPU boot first time
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.kernelParams   = [ "quiet" "nomodeset" ];
 
   networking.hostId = "00000000";   # placeholder (keeps derivations identical)
