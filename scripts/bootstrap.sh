@@ -120,7 +120,8 @@ run_cmd 'git -C /mnt/etc/nixos -c user.name="setlist-bootstrap" \
        commit -m "Add hardware configuration" --no-gpg-sign'
 
 read -rp "Hostname for this box: " HN
-run_cmd "echo $HN > /mnt/persist/hostname"
+run_cmd mkdir -p /mnt/persist/etc
+run_cmd "echo $HN > /mnt/persist/etc/setlist-hostname"
 
 # ── Install NixOS ────────────────────────────────────────────────────────────
 log "Installing NixOS (this builds the ZFS module; may take a while) ..."

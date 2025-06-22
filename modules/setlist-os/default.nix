@@ -28,7 +28,7 @@ in
     hostname = {
       static      = mkOption { type = types.str; default = "setlist"; };
       useDynamic  = mkOption { type = types.bool; default = true; };
-      dynamicFile = mkOption { type = types.str; default = "/persist/hostname"; };
+      dynamicFile = mkOption { type = types.str; default = "/etc/setlist-hostname"; };
     };
 
     extraPersistentDirs = mkOption {
@@ -89,7 +89,7 @@ in
         Type = "oneshot";
         ExecStart = ''
           ${pkgs.bash}/bin/bash -c '
-            FILE="${cfg.hostname.dynamicFile}"
+            FILE="/etc/setlist-hostname"
             if [ -f "$FILE" ]; then
               HN=$(cat "$FILE" | tr -d " \n\r")
               if [ -n "$HN" ]; then
