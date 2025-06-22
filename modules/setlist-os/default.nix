@@ -6,22 +6,29 @@ let
   cfg = config.setlist-os;
 in
 {
-  ###########################################################################
+  # ──────────────────────────────────────────────────────────────────────────
+  # Imports
+  # ──────────────────────────────────────────────────────────────────────────
+  imports = [
+    impermanence.nixosModules.impermanence
+  ];
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Module options
+  # ──────────────────────────────────────────────────────────────────────────
   options.setlist-os = {
     enable = mkEnableOption "Enable the Setlist-OS base profile";
 
-    # ZFS layout knobs
     rootPool     = mkOption { type = types.str; default = "rpool"; };
     mediaPool    = mkOption { type = types.str; default = "mediapool"; };
     mediaDataset = mkOption { type = types.str; default = "library"; };
     mediaMount   = mkOption { type = types.str; default = "/media"; };
     persistMount = mkOption { type = types.str; default = "/persist"; };
 
-    # dynamic-hostname feature
     hostname = {
-      static       = mkOption { type = types.str; default = "setlist"; };
-      useDynamic   = mkOption { type = types.bool; default = true; };
-      dynamicFile  = mkOption { type = types.str; default = "/persist/hostname"; };
+      static      = mkOption { type = types.str; default = "setlist"; };
+      useDynamic  = mkOption { type = types.bool; default = true; };
+      dynamicFile = mkOption { type = types.str; default = "/persist/hostname"; };
     };
 
     extraPersistentDirs = mkOption {
@@ -30,46 +37,50 @@ in
     };
   };
 
-  ###########################################################################
+  # ──────────────────────────────────────────────────────────────────────────
+  # Implementation
+  # ──────────────────────────────────────────────────────────────────────────
   config = mkIf cfg.enable {
-    ################  Core Nix & pkgs  #######################################
+    # Core Nix settings
     nix.settings.experimental-features = [ "nix-command" "flakes" ];
     nix.settings.auto-optimise-store   = true;
     nix.gc.automatic                   = true;
+
+    # Allow non-free packages (e.g. nixFlakes, tailscale)
+    nixpkgs.config.allowUnfree         = true;
 
     environment.systemPackages = with pkgs; [
       rsync ripgrep tailscale git openssh
     ];
 
-    ################  ZFS & boot  ###########################################
-    boot.supportedFilesystems = [ "zfs" ];
-    boot.zfs.devNodes         = "/dev/disk/by-partuuid";
-    services.zfs.autoScrub.enable = true;
-
-    boot.loader.systemd-boot.enable      = true;
+    # ZFS & boot loader
+    boot.supportedFilesystems        = [ "zfs" ];
+    boot.zfs.devNodes                = "/dev/disk/by-partuuid";
+    services.zfs.autoScrub.enable    = true;
+    boot.loader.systemd-boot.enable  = true;
     boot.loader.efi.canTouchEfiVariables = true;
 
-    ################  Impermanence  #########################################
-    imports = [ impermanence.nixosModules.impermanence ];
-
+    # Impermanence: only /persist survives
     environment.persistence."${cfg.persistMount}" = {
-      directories =
-        [ "/etc/ssh" "/var/lib/tailscale" "/var/log" "/home" ]
-        ++ cfg.extraPersistentDirs;
+      directories = [
+        "/etc/ssh"
+        "/var/lib/tailscale"
+        "/var/log"
+        "/home"
+      ] ++ cfg.extraPersistentDirs;
       files = optional cfg.hostname.useDynamic cfg.hostname.dynamicFile;
     };
 
-    ################  Media mount  ##########################################
+    # Media dataset auto-mount
     fileSystems."${cfg.mediaMount}" = {
       device = "${cfg.mediaPool}/${cfg.mediaDataset}";
       fsType = "zfs";
     };
 
-    ################  Networking  ###########################################
-    # compile-time placeholder; can be overridden at boot
+    # Hostname (static placeholder)
     networking.hostName = cfg.hostname.static;
 
-    # Runtime hostname setter
+    # Dynamic hostname service
     systemd.services.setlist-dyn-hostname = mkIf cfg.hostname.useDynamic {
       description = "Set hostname from ${cfg.hostname.dynamicFile} at boot";
       wantedBy    = [ "multi-user.target" ];
@@ -91,11 +102,11 @@ in
       };
     };
 
-    ################  SSH & Tailscale  ######################################
+    # Networking services
     services.openssh.enable  = true;
     services.tailscale.enable = true;
 
-    ################  Predefined service user  ##############################
+    # Predefined service user
     users.users.setlist = {
       isNormalUser   = true;
       extraGroups    = [ "wheel" ];
@@ -103,6 +114,7 @@ in
       home           = "/home/setlist";
     };
 
+    # Ensure /media is writable by setlist
     systemd.tmpfiles.rules = [
       "d ${cfg.mediaMount} 0775 setlist users - -"
     ];

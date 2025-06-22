@@ -4,8 +4,12 @@
 #  • Partitions two NVMe drives
 #  • Creates ZFS pools/datasets
 #  • Clones the setlist-os repo and installs NixOS
+#  • On error, tears down any ZFS pools and unmounts /mnt
 #-------------------------------------------------------------------------------
 set -euo pipefail
+
+# ── Enable non-free packages for this session ────────────────────────────────
+export NIXPKGS_ALLOW_UNFREE=1
 
 # ── Color palette ─────────────────────────────────────────────────────────────
 C_RESET="\033[0m"
@@ -14,16 +18,31 @@ C_WARN="\033[0;33m"
 C_ERR="\033[0;31m"
 C_CMD="\033[0;34m"
 
-log()      { printf "${C_INFO}[INFO] %s${C_RESET}\n" "$*"; }
-warn()     { printf "${C_WARN}[WARN] %s${C_RESET}\n" "$*"; }
-error()    { printf "${C_ERR}[ERR ] %s${C_RESET}\n" "$*"; }
-run_cmd()  { printf "${C_CMD}[CMD ] %s${C_RESET}\n" "$*"; eval "$*"; }
+log()     { printf "${C_INFO}[INFO] %s${C_RESET}\n" "$*"; }
+warn()    { printf "${C_WARN}[WARN] %s${C_RESET}\n" "$*"; }
+error()   { printf "${C_ERR}[ERR ] %s${C_RESET}\n" "$*"; }
+run_cmd() { printf "${C_CMD}[CMD ] %s${C_RESET}\n" "$*"; eval "$*"; }
 
 # ── Log everything to file too ────────────────────────────────────────────────
 LOGFILE="/tmp/setlist-bootstrap-$(date +%F-%H%M%S).log"
 exec > >(tee -a "$LOGFILE") 2>&1
 
-trap 'error "Bootstrap failed (line $LINENO). Check $LOGFILE"' ERR
+# ── Cleanup function ──────────────────────────────────────────────────────────
+cleanup() {
+  log "Cleaning up mounts and ZFS pools..."
+  run_cmd "umount -R /mnt || true"
+  run_cmd "zpool destroy -f mediapool || true"
+  run_cmd "zpool destroy -f rpool    || true"
+}
+
+# ── Error handler ─────────────────────────────────────────────────────────────
+on_error() {
+  error "Bootstrap failed at line $1. Performing cleanup..."
+  cleanup
+  error "See log at $LOGFILE"
+  exit 1
+}
+trap 'on_error $LINENO' ERR
 
 # ── Gather user input ─────────────────────────────────────────────────────────
 log "Block devices currently detected:"
@@ -65,13 +84,12 @@ read -rp "Partitions look OK? [y/N] " ok
 [[ ${ok:-n} =~ ^[Yy]$ ]] || { error "User aborted."; exit 1; }
 
 # ── Create ZFS pools ─────────────────────────────────────────────────────────
-run_cmd "modprobe zfs"
+run_cmd modprobe zfs
 
 log "Creating rpool ..."
 run_cmd zpool create -f -o ashift=12 \
        -O compression=zstd -O atime=off -O mountpoint=none \
        rpool "${OSDEV}p2"
-
 for ds in root nix persist home; do
   run_cmd zfs create -o mountpoint=legacy rpool/$ds
 done
@@ -92,24 +110,24 @@ run_cmd mount -t zfs rpool/home        /mnt/home
 run_cmd mount -t zfs mediapool/library /mnt/media
 run_cmd mount "${OSDEV}p1" /mnt/boot
 
-
-# ── Clone repo & generate hardware.nix ───────────────────────────────────────
+# ── Clone repo & commit hardware config ─────────────────────────────────────
 log "Cloning setlist-os ..."
 run_cmd git clone https://github.com/setlist-os/setlist-os /mnt/etc/nixos
 
 run_cmd nixos-generate-config --root /mnt --no-filesystems
 run_cmd git -C /mnt/etc/nixos add hardware-configuration.nix
-run_cmd git -C /mnt/etc/nixos commit -m "Add hardware configuration" --no-gpg-sign
+run_cmd 'git -C /mnt/etc/nixos -c user.name="setlist-bootstrap" \
+       -c user.email="bootstrap@setlist-os.local" \
+       commit -m "Add hardware configuration" --no-gpg-sign'
 
 read -rp "Hostname for this box: " HN
 run_cmd "echo $HN > /mnt/persist/hostname"
 
 # ── Install NixOS ────────────────────────────────────────────────────────────
 log "Installing NixOS (this builds the ZFS module; may take a while) ..."
-run_cmd nixos-install --flake .#setlist-os
+run_cmd nixos-install --root /mnt --flake /mnt/etc/nixos#setlist-os
 
 log "SUCCESS!  Installation complete."
 log "Next steps:"
-echo "  echo my-hostname | sudo tee /persist/hostname"
 echo "  sudo reboot"
 

@@ -1,7 +1,7 @@
 { pkgs, ... }: {
   imports = [ 
     ../modules/setlist-os
-    ./hardware-configuration.nix
+    ../hardware-configuration.nix
   ];
 
   setlist-os.enable = true;
