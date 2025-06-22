@@ -71,6 +71,7 @@ in
         "/var/log"
         "/home"
         "/var/lib/setlist"
+        "/var/lib/nixos"
       ] ++ cfg.extraPersistentDirs;
       files = optional cfg.hostname.useDynamic cfg.hostname.dynamicFile;
     };
