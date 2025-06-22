@@ -19,7 +19,7 @@
     ############################################################################
     # 4) DEMO host (yours) – optional, but included for CI & ISO build
     ############################################################################
-    nixosConfigurations.setlist-os = lib.nixosSystem {
+    nixosConfigurations.setlist-os = nixpkgs.lib.nixosSystem {
       system  = "x86_64-linux";
       modules = [
         self.nixosModules.setlist-os     # core appliance
