@@ -1,6 +1,5 @@
 { pkgs, ... }: {
   imports = [ 
-    ../modules/setlist-os
     ../hardware-configuration.nix
   ];
 
