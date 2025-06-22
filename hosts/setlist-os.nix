@@ -51,6 +51,8 @@
     shell          = pkgs.zsh;           # or pkgs.bashInteractive
   };
 
+  programs.zsh.enable = true;
+
   # service account comes from the appliance module (setlist user)
 
   ##############################################################################
