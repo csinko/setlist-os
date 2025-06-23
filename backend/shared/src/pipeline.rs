@@ -9,8 +9,9 @@ use std::fmt;
 pub enum Stage {
     Import,
     Fingerprint,
-    Match,
-    Tag,
+    MatchTrack,
+    MatchAlbum,
+    TagTrack,
     Index,
 }
 
@@ -26,8 +27,9 @@ impl Stage {
         match self {
             Stage::Import      => "import",
             Stage::Fingerprint => "fingerprint",
-            Stage::Match       => "match",
-            Stage::Tag         => "tag",
+            Stage::MatchTrack  => "match_track",
+            Stage::MatchAlbum  => "match_album",
+            Stage::TagTrack    => "tag_track",
             Stage::Index       => "index",
         }
     }

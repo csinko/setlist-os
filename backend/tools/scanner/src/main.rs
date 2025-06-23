@@ -18,15 +18,12 @@
 
 
 use anyhow::Result;
-use tracing_subscriber::{fmt, EnvFilter};
 
 #[tokio::main]
 async fn main() -> Result<()> {
     // Load .env if present and initialise tracing at info level (override with RUST_LOG).
     dotenvy::dotenv().ok();
-    fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive("info".parse()?))
-        .init();
+    shared::tracing_init::init("scanner-tool");
 
     tracing::info!("scanner stub – nothing to do yet");
     Ok(())

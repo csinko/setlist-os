@@ -35,7 +35,6 @@ use futures_util::StreamExt;
 use lapin::{
     options::{
         BasicAckOptions, BasicConsumeOptions, BasicPublishOptions, BasicQosOptions,
-        ExchangeDeclareOptions, QueueBindOptions, QueueDeclareOptions,
     },
     types::FieldTable,
     BasicProperties, Channel, Connection, ConnectionProperties,
@@ -44,7 +43,6 @@ use shared::pipeline::{JobEnvelope, Stage};
 use sqlx::PgPool;
 use std::process::Command;
 use tracing::{debug, error, info, instrument, span, Level, Span, Instrument};
-use tracing_subscriber::{fmt, EnvFilter};
 use std::default::Default;
 
 /*────────────────────────────────────────────────────────────────────────────*/
@@ -52,9 +50,8 @@ use std::default::Default;
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
-    fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive("worker=debug".parse()?))
-        .init();
+    shared::tracing_init::init("worker-fingerprint");
+
 
     /*── DB pool ───────────────────────────────────────────────────────────*/
     let db_url = std::env::var("DATABASE_URL")?;
@@ -72,18 +69,7 @@ async fn main() -> Result<()> {
     channel.basic_qos(4, BasicQosOptions::default()).await?;
     debug!("QoS set to prefetch=4");
 
-    // exchange + queues
-    channel
-        .exchange_declare(
-            "jobs",
-            lapin::ExchangeKind::Direct,
-            ExchangeDeclareOptions::default(),
-            FieldTable::default(),
-        )
-        .await?;
-    debug!("exchange=jobs declared");
-    declare_queue(&channel, "queue.fingerprint", "fingerprint").await?;
-    declare_queue(&channel, "queue.metadata", "metadata").await?;
+    shared::amqp::declare_all(&channel).await?;
 
     /*── start consumer loop ───────────────────────────────────────────────*/
     let mut consumer = channel
@@ -151,12 +137,12 @@ async fn handle_job(channel: &Channel, db: &PgPool, payload: &[u8]) -> Result<()
         album_id: None,
         track_id: None,
         file_id: env.file_id,
-        stage: Stage::Match,
+        stage: Stage::MatchTrack,
     };
     channel
         .basic_publish(
-            "jobs",
-            "metadata",
+            shared::amqp::EXCHANGE,
+            "match_track",
             BasicPublishOptions::default(),
             &serde_json::to_vec(&next)?,
             BasicProperties::default(),
@@ -165,25 +151,6 @@ async fn handle_job(channel: &Channel, db: &PgPool, payload: &[u8]) -> Result<()
         .await?;
     info!("metadata job published");
 
-    Ok(())
-}
-
-/*────────────────────────────────────────────────────────────────────────────*/
-
-async fn declare_queue(channel: &Channel, name: &str, rk: &str) -> Result<()> {
-    channel
-        .queue_declare(name, QueueDeclareOptions{ durable: true, .. Default::default()}, FieldTable::default())
-        .await?;
-    channel
-        .queue_bind(
-            name,
-            "jobs",
-            rk,
-            QueueBindOptions::default(),
-            FieldTable::default(),
-        )
-        .await?;
-    debug!(queue = name, routing_key = rk, "queue declared & bound");
     Ok(())
 }
 
