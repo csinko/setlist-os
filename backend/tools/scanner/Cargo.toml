@@ -1,0 +1,20 @@
+[package]
+name    = "tool-scanner"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio        = { workspace = true }            # async walking & AMQP
+walkdir      = "2"                             # recursive directory walk
+lapin        = { workspace = true }            # publish enqueue jobs
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+uuid         = { workspace = true }
+anyhow       = { workspace = true }
+dotenvy      = { workspace = true }
+tracing             = { workspace = true }
+tracing-subscriber  = { workspace = true }
+
+# Shared types (FileJob, Stage, etc.)
+shared       = { path = "../../shared" }
+

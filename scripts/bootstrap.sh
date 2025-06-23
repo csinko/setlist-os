@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source "$(dirname "$0")/lib/common.sh"
 #-------------------------------------------------------------------------------
 #  Setlist-OS Bootstrap Wizard
 #  • Partitions two NVMe drives
@@ -10,18 +11,6 @@ set -euo pipefail
 
 # ── Enable non-free packages for this session ────────────────────────────────
 export NIXPKGS_ALLOW_UNFREE=1
-
-# ── Color palette ─────────────────────────────────────────────────────────────
-C_RESET="\033[0m"
-C_INFO="\033[0;32m"
-C_WARN="\033[0;33m"
-C_ERR="\033[0;31m"
-C_CMD="\033[0;34m"
-
-log()     { printf "${C_INFO}[INFO] %s${C_RESET}\n" "$*"; }
-warn()    { printf "${C_WARN}[WARN] %s${C_RESET}\n" "$*"; }
-error()   { printf "${C_ERR}[ERR ] %s${C_RESET}\n" "$*"; }
-run_cmd() { printf "${C_CMD}[CMD ] %s${C_RESET}\n" "$*"; eval "$*"; }
 
 # ── Log everything to file too ────────────────────────────────────────────────
 LOGFILE="/tmp/setlist-bootstrap-$(date +%F-%H%M%S).log"
