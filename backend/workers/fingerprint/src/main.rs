@@ -1,6 +1,34 @@
-//! Fingerprint worker
-//! Consumes queue.fingerprint → runs fpcalc → marks FP_DONE
-//! then enqueues metadata job.
+//! ────────────────────────────────────────────────────────────────────────────
+//!  WORKER:  FINGERPRINT  (queue.fingerprint)   ← **partially implemented**
+//! ────────────────────────────────────────────────────────────────────────────
+//! Responsibility
+//! --------------
+//! • Run `fpcalc` (Chromaprint) on the physical file.
+//! • Persist `duration_sec` into `tracks` and mark `files.status = 'FP_DONE'`.
+//! • Forward to Match-worker.
+//!
+//! Trigger / Routing-Key
+//! ---------------------
+//!   routing_key="fingerprint"
+//!   payload: JobEnvelope { file_id, stage=Fingerprint }
+//!
+//! Steps
+//! -----
+//! 1. SELECT path FROM files WHERE id = $file_id  (expect exactly 1 row).
+//! 2. Exec `fpcalc -json <path>` and parse { duration, fingerprint }.
+//! 3. UPDATE:
+//!        tracks.duration_sec
+//!        files.status='FP_DONE', fp_done_at=NOW()
+//! 4. PUBLISH Match job:
+//!        routing_key="match"
+//!        JobEnvelope { file_id, stage=Match }
+//
+//! Failure handling
+//! ----------------
+//! • fpcalc non-zero exit   → push job back with exponential back-off.
+//! • Missing file           → set files.status='ERROR', abort chain.
+//!
+
 
 use anyhow::Result;
 use futures_util::StreamExt;

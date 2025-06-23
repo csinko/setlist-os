@@ -1,12 +1,21 @@
-// backend/tools/scanner/src/main.rs
-//! Media-library scanner (stub).
+//! ────────────────────────────────────────────────────────────────────────────
+//!  TOOL:  SCANNER  (manual / cron)
+//! ────────────────────────────────────────────────────────────────────────────
+//! Responsibility
+//! --------------
+//! • Walk the long-term media directory (`/media`) to detect new albums that
+//!   were added *outside* the pipeline (e.g. rsync, torrent).
+//! • For each new folder:
+//!       INSERT albums(... source={"type":"library_scan"} )
+//!       queue Import job
+//! • For removed folders: optionally tombstone albums / files.
+//
+//! Notes
+//! -----
+//! • This is *not* a worker; run ad-hoc or via systemd timer.
+//! • Could store a per-scan manifest to detect renames/moves.
 //!
-//! This binary will eventually:
-//!   1. Walk a configured media directory (env var `MEDIA_ROOT` or `/media`).
-//!   2. Detect new albums / files.
-//!   3. Publish `FileJob { stage = Stage::Fingerprint }` messages to RabbitMQ.
-//!
-//! For now it just boots, initialises logging, and exits successfully.
+
 
 use anyhow::Result;
 use tracing_subscriber::{fmt, EnvFilter};
