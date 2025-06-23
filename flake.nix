@@ -53,10 +53,7 @@
           builtins.listToAttrs (map
             (system: {
               name = "setlist-os-${system}";
-              value = (import nixpkgs {
-                inherit system;
-                overlays = [ rust-overlay.overlays.default ];
-              }).lib.nixosSystem {
+              value = nixpkgs.lib.nixosSystem {
                 inherit system;
                 specialArgs = { inherit impermanence; };
                 modules = [

@@ -117,7 +117,7 @@ run_cmd "echo $HN > /mnt/persist/etc/setlist-hostname"
 
 # ── Install NixOS ────────────────────────────────────────────────────────────
 log "Installing NixOS (this builds the ZFS module; may take a while) ..."
-run_cmd nixos-install --root /mnt --flake /mnt/etc/nixos#setlist-os
+run_cmd nixos-install --root /mnt --flake /mnt/etc/nixos#setlist-os-x86_64-linux
 
 log "SUCCESS!  Installation complete."
 log "Next steps:"
