@@ -1,7 +1,8 @@
 ###############################################################################
 #  Rust / Cargo artefacts
 ###############################################################################
-/target/                     # root target folder
+target
+target/                     # root target folder
 **/target/                   # any nested work-space crate targets
 **/*.rs.bk                   # backup files
 **/*.rlib
