@@ -9,7 +9,7 @@ pub fn init(service: &str) {
         .with_target(false)
         .with_thread_ids(true)
         .with_span_events(tracing_subscriber::fmt::format::FmtSpan::CLOSE)
-        .json()                      // ← machine-readable out-of-the-box
+        // .json()                      // ← machine-readable out-of-the-box
         .init();
     tracing::info!(service, "tracing initialised");
 }

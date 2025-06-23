@@ -1,16 +1,32 @@
+# backend/e2e/Cargo.toml
 [package]
 name    = "e2e"
 version = "0.1.0"
 edition = "2021"
 
+###########################
+#  Runtime deps for src/  #
+###########################
+[dependencies]
+anyhow  = { workspace = true }
+uuid    = { workspace = true }
+tokio   = { workspace = true, features = ["rt-multi-thread", "macros", "process", "io-util"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }  # same feature set you had
+testcontainers          = "0.15"
+testcontainers-modules  = { version = "0.3", features = ["postgres", "rabbitmq"] }
+
+#################################
+#  Test-only, docker-heavy deps #
+#################################
 [dev-dependencies]
-futures               = "0.3"
-testcontainers        = "0.15"
-testcontainers-modules = { version = "0.3", features = ["postgres", "rabbitmq"] }
-reqwest               = { version = "0.12", features = ["json"] }
-tokio                 = { workspace = true, features = ["rt-multi-thread", "macros", "process", "io-util"] }
-sqlx                  = { version = "0.7", default-features = false, features = ["runtime-tokio-rustls", "postgres", "macros", "uuid", "time"] }
-uuid                  = { workspace = true }
-anyhow                = { workspace = true }
-tempfile              = "3.20"
-serde_json            = "1.0"
+futures                 = "0.3"
+sqlx                    = { version = "0.7", default-features = false, features = [
+  "runtime-tokio-rustls",
+  "postgres",
+  "macros",
+  "uuid",
+  "time"
+] }
+tempfile                = "3.20"
+serde_json              = "1.0"
+
