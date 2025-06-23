@@ -91,7 +91,7 @@ in
 
     environment.etc."setlist-dyn-hostname.sh" = {
       text = ''
-        #!/usr/bin/env bash
+        #!${pkgs.bash}/bin/bash
         file='${cfg.hostname.dynamicFile}'
         if [[ -r "$file" ]]; then
           hn=$(tr -d " \r\n" < "$file")
