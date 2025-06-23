@@ -89,32 +89,15 @@ in
     # Hostname (static placeholder)
     networking.hostName = cfg.hostname.static;
 
-    environment.etc."setlist-dyn-hostname.sh" = {
-      text = ''
-        #!/usr/bin/env bash
-        FILE="${cfg.hostname.dynamicFile}"
-        if [[ -f "$FILE" ]]; then
-          HN=$(tr -d " \r\n" < "$FILE")
-          if [[ -n $HN ]]; then
-            echo "setlist-dyn-hostname: setting hostname to $HN"
-            hostnamectl set-hostname "$HN"
-          fi
+    system.activationScripts.dynamicHostname.text = ''
+      if [[ -f ${cfg.hostname.dynamicFile} ]]; then
+        HN=$(tr -d " \r\n" < ${cfg.hostname.dynamicFile})
+        if [[ -n $HN ]]; then
+          echo "dynamic hostname -> $HN"
+          echo "$HN" /proc/sys/kernel/hostname
         fi
-      '';
-      mode = "0755";
-    };
-
-    # Dynamic hostname service
-    systemd.services.setlist-dyn-hostname = mkIf cfg.hostname.useDynamic {
-      description = "Dynamically set hostname from ${cfg.hostname.dynamicFile}";
-      wantedBy    = [ "multi-user.target" ];
-      before      = [ "network.target" ];
-      serviceConfig = {
-        Type      = "oneshot";
-        ExecStart = "${pkgs.bash}/bin/bash /etc/setlist-dyn-hostname.sh";
-      };
-    };
-
+      fi
+    '';
 
     # Networking services
     services.openssh.enable  = true;
