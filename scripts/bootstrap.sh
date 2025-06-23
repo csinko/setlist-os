@@ -96,7 +96,10 @@ for d in nix persist media boot; do mkdir -p /mnt/$d; done
 run_cmd mount -t zfs rpool/nix         /mnt/nix
 run_cmd mount -t zfs rpool/persist     /mnt/persist
 run_cmd mount -t zfs mediapool/library /mnt/media
-run_cmd mount "${OSDEV}p1" /mnt/boot
+
+wipefs -a "${OSDEV}p1"
+mkfs.fat -F32 -n EFI "${OSDEV}p1"
+run_cmd mount -t vfat "${OSDEV}p1" /mnt/boot
 
 # ── Clone repo & commit hardware config ─────────────────────────────────────
 log "Cloning setlist-os ..."
